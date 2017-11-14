@@ -4,10 +4,8 @@ inputFile('./TestInput/hitori_unsolved.txt').
 /********************* dummy solution algorithms -> fill your correct algorithm here */
 transpose([], []).
 transpose([F|Fs], Ts) :- transpose(F, [F|Fs], Ts).
-
 transpose([], _, []).
 transpose([_|Rs], Ms, [Ts|Tss]) :- lists_firsts_rests(Ms, Ts, Ms1), transpose(Rs, Ms1, Tss).
-
 lists_firsts_rests([], [], []).
 lists_firsts_rests([[F|Os]|Rest], [F|Fs], [Os|Oss]) :- lists_firsts_rests(Rest, Fs, Oss).
 
@@ -15,60 +13,87 @@ lists_firsts_rests([[F|Os]|Rest], [F|Fs], [Os|Oss]) :- lists_firsts_rests(Rest, 
 puzzle([],[],[]).
 puzzle([V, C], V, C).
 
-/* checkWhites(values, colors) */
-uniqueWhiteRow([]).
-uniqueWhiteRow([P|Ps]):- pair(P, V, C), ( C = 1 -> not(member([V, 1], Ps)) ; true ), uniqueWhiteRow(Ps).
-uniqueWhite([], []).
-uniqueWhite([Vs|Vss], [Cs|Css]):- pairedList(Vs, Cs, Ps), uniqueWhiteRow(Ps), uniqueWhite(Vss, Css).
-uniqueWhite(P):- puzzle(P, V, C), transpose(V, Vcol), transpose(C, Ccol), uniqueWhite(V, C), uniqueWhite(Vcol, Ccol).
+elemAt(Ess, X, Y, R):- nth0(Y, Ess, Es), nth0(X, Es, R).
+valueAt(P, X, Y, R):- puzzle(P, Vals, _), nth0(Y, Vals, Rows), nth0(X, Rows, R).
+colorAt(P, X, Y, R):- puzzle(P, _, Cols), nth0(Y, Cols, Rows), nth0(X, Rows, R).
 
-% Generate list of false(0), C is list of colors
-falseColor(C, R):- ( C = 0 -> R is 1 ; R is 0 ).
-falseList(N, C, L) :- length(L, N), maplist(falseColor, C, L).
-generateChecked(N, C, R) :- length(R, N), maplist(falseList(N), C, R).  % Genereate 2D list of false
+pair([V, C], V, C).
 
 pairedList([],[],[]).
 pairedList([A|Ar], [B|Br], [[A,B]|R]):- pairedList(Ar, Br, R).
 
-pair([V, C], V, C).
-
-valueAt(P, X, Y, R):- puzzle(P, Vals, _), nth0(Y, Vals, Rows), nth0(X, Rows, R).
-colorAt(P, X, Y, R):- puzzle(P, _, Cols), nth0(Y, Cols, Rows), nth0(X, Rows, R).
-
-/************ DANGER ZONE - Predicates whitin may or may not work as intended */
-
-/* blacksHorRow(puzzle) */
-blacksHorRow([]).
-blacksHorRow([_]):- !.
-blacksHorRow([X, Y | R]):- ( X = Y ->  number(X), number(Y) ; ! ), blacksHorRow([Y|R]).
+falseColor(C, R):- ( C = 0 -> R is 1 ; R is 0 ).
+falseList(N, C, L) :- length(L, N), maplist(falseColor, C, L).
+generateChecked(N, C, R) :- length(R, N), maplist(falseList(N), C, R).  % Genereate 2D list of false
 
 
-/* checkedFilled(array) */
+/* checkWhites(values, colors) */
+uniqueWhiteRow([]).
+uniqueWhiteRow([Pl|Pls]):- pair(Pl, V, C), ( C = 1 -> not(member([V, 1], Pls)) ; true ), uniqueWhiteRow(Pls).
+uniqueWhite([], []).
+uniqueWhite([Vs|Vss], [Cs|Css]):- pairedList(Vs, Cs, Ps), uniqueWhiteRow(Ps), uniqueWhite(Vss, Css).
+uniqueWhite(P):- puzzle(P, V, C), transpose(V, Vcol), transpose(C, Ccol), uniqueWhite(V, C), uniqueWhite(Vcol, Ccol).
+
+abr([]).
+abr([_]):-!.
+abr([P1, P2|Ps]):- ( P1 = P2 -> P1 \= 0 ; true ), abr([P2|Ps]).
+abs([]).
+abs([Cs|Css]):- abr(Cs), abs(Css).
+ab(P):- puzzle(P, _, C), transpose(C, Ccol), abs(C), abs(Ccol).
+
+
 allChecked([]).
 allChecked([H|T]):- not(member(0, H)), allChecked(T).
 
+replace(L, X, Y, E, R):- replace0(L, Y, X, E, R).
+replace0([L|Ls], 0, Y, E, [R|Ls]):- replace_column(L,Y,E,R),!.
+replace0([L|Ls], X, Y, E, [L|Rs]):- X > 0, X1 is X-1, replace0(Ls, X1, Y, E, Rs).
+replace_column([_|Cs], 0, E, [E|Cs]).
+replace_column([C|Cs], Y, E, [C|Rs]):-Y > 0, Y1 is Y-1, replace_column(Cs, Y1, E, Rs).
+
+/************ DANGER ZONE - Predicates whitin may or may not work as intended */
+
+
+
 /* floodFill(puzzle) */
 floodFill([]).
-floodFill(P):- puzzle(P, _, C), length(N, P), generateChecked(N, C, G), floodFill(C, G, []).
-/* floodFill(puzzle, checked(2D)) */
-floodFill([], G, G).
-%floodFill([C|Cr], [Checked|CheckedRest], R):- ( C = 0  -> floodFill(Cr, CheckedRest, R) ;  ),
+floodFill(P):- puzzle(P, _, C), length(C, N), generateChecked(N, C, G), floodFill(C, [[0,0]],G).
+floodFill(C, [I|Is], Chl):-
+    pair(I, X, Y),
+    length(C, S),
+    replace(Chl, X, Y, 1, Chl1),
+    X0 is X - 1, X1 is X + 1, Y0 is Y - 1, Y1 is Y + 1,
+    ( X0 >= 0 -> elemAt(Chl, X0, Y, C0), (C0 = 0 -> floodFill(C, [[X0, Y],Is], Chl1) ; true) ; true),
+    ( X1 <  S -> elemAt(Chl, X1, Y, C1), (C1 = 0 -> floodFill(C, [[X1, Y],Is], Chl1) ; true) ; true),
+    ( Y0 >= 0 -> elemAt(Chl, X, Y0, C2), (C2 = 0 -> floodFill(C, [[X, Y0],Is], Chl1) ; true) ; true),
+    ( Y1 <  S -> elemAt(Chl, X, Y1, C3), (C3 = 0 -> floodFill(C, [[X, Y1],Is], Chl1) ; true) ; true),
+    floodFill(C, Is, Chl1).
+floodFill(_, [], Chl):- flatten(Chl, C), not(member(0, C)),!.
+
+
 
 /************ DANGER ZONE end */
 
 test:-
-  puzzle(P, [[1,1],[1,1]], [[1,0],[0,1]]),
+  puzzle(_, [[3,5,4,1,3],[2,4,1,4,5],[2,2,4,5,3],[4,3,5,4,2],[3,4,3,2,1]],
+            [[1,1,1,1,1],[1,1,1,1,1],[1,1,1,1,1],[1,1,1,1,1],[1,1,1,1,1]]),
+  puzzle(P0, [[1,2],[3,4]],[[0,0],[0,0]]),
+  puzzle(P1, [[1,2],[3,4]],[[1,0],[0,1]]),
+  puzzle(P2, [[1,2],[3,4]],[[0,1],[1,1]]),
+
   %valueAt(P, X, Y, 3),
   %write(X), nl, write(Y).
-  puzzle(P, V, C),
-  writeOutput('Orignial V', V),
-  writeOutput('Orignial C', C),
-  transpose(V, V1),
-  transpose(C, C1),
-  writeOutput('Transposed V', V1),
-  writeOutput('Transposed C', C1),
+  %puzzle(P, V, C),
+  %writeOutput('Orignial V', V),
+  %writeOutput('Orignial C', C),
+  %transpose(V, V1),
+  %transpose(C, C1),
+  %writeOutput('Transposed V', V1),
+  %writeOutput('Transposed C', C1),
 
-  uniqueWhite(P).
+
+  floodFill(P2).
+
   %uniqueWhiteRow([1,2,3,1],[1,1,1,1]).
 
   %generateChecked(2, [[0,0],[0,0]], L),
