@@ -56,8 +56,7 @@ replace_column([C|Cs], Y, E, [C|Rs]):-Y > 0, Y1 is Y-1, replace_column(Cs, Y1, E
 
 
 /* floodFill(puzzle) */
-floodFill([]).
-floodFill(P):- puzzle(P, _, C), length(C, N), generateChecked(N, C, G), floodFill(C, [[0,0]],G).
+floodFill(_, [], Chl):- flatten(Chl, C), not(member(0, C)), !.
 floodFill(C, [I|Is], Chl):-
     pair(I, X, Y),
     length(C, S),
@@ -68,7 +67,7 @@ floodFill(C, [I|Is], Chl):-
     ( Y0 >= 0 -> elemAt(Chl, X, Y0, C2), (C2 = 0 -> floodFill(C, [[X, Y0],Is], Chl1) ; true) ; true),
     ( Y1 <  S -> elemAt(Chl, X, Y1, C3), (C3 = 0 -> floodFill(C, [[X, Y1],Is], Chl1) ; true) ; true),
     floodFill(C, Is, Chl1).
-floodFill(_, [], Chl):- flatten(Chl, C), not(member(0, C)),!.
+floodFill(P):- puzzle(P, _, C), length(C, N), generateChecked(N, C, G), floodFill(C, [[0,0]],G).
 
 
 
