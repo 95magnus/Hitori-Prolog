@@ -90,6 +90,7 @@ test:-
   %writeOutput('Transposed V', V1),
   %writeOutput('Transposed C', C1),
 
+
   floodFill(P2).
 
   %uniqueWhiteRow([1,2,3,1],[1,1,1,1]).
