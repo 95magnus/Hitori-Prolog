@@ -39,6 +39,29 @@ pair([V, C], V, C).
 pairedList([],[],[]).
 pairedList([A|Ar], [B|Br], [[A,B]|R]):- pairedList(Ar, Br, R).
 
+graph(P, Nodes):-
+  puzzle(P, _, C),
+  length(C, N)
+  flattten(C, Cf),
+  graph(Cf, 0, N, Nodes).
+
+graph([H|T], I, N, Nodes):-
+  I1 = I + 1,
+  graph(T, I1, Ns).
+
+blackList(P, B):-
+  puzzle(P, _, C),
+  length(C, N),
+  flattten(C, Cf),
+  blackList(Cf, 0, N, B).
+
+blackList([C|Cs], I, N, B):-
+  maplist(isBlack(I, N), C, R)
+  I1 is I + 1,
+  blackList(Cs, I1, [R|B]).
+
+isBlack(C, I, N, [X, Y]):- C = 0, index(I, X, Y, N).
+
 uniqueWhiteRow([]).
 uniqueWhiteRow([Pl|Pls]):- pair(Pl, V, C), ( C = 1 -> not(member([V, 1], Pls)) ; true ), uniqueWhiteRow(Pls).
 uniqueWhite([], []).
@@ -53,11 +76,12 @@ abs([Cs|Css]):- abr(Cs), abs(Css).
 ab(P):- puzzle(P, _, C), transpose(C, Ccol), abs(C), abs(Ccol).
 
 falseColor(C, R):- ( C = 0 -> R is 1 ; R is 0 ).
+
+%falseColor(0, 1).
+%falseColor(C, 0): C \= 0.
+
 falseList(N, C, L) :- length(L, N), maplist(falseColor, C, L).
 generateChecked(N, C, R) :- length(R, N), maplist(falseList(N), C, R).
-
-allChecked([]).
-allChecked([H|T]):- not(member(0, H)), allChecked(T).
 
 floodFill(P):-
   puzzle(P, _, C),
