@@ -39,28 +39,46 @@ pair([V, C], V, C).
 pairedList([],[],[]).
 pairedList([A|Ar], [B|Br], [[A,B]|R]):- pairedList(Ar, Br, R).
 
-graph(P, Nodes):-
-  puzzle(P, _, C),
-  length(C, N)
-  flattten(C, Cf),
-  graph(Cf, 0, N, Nodes).
+% List of 0 (blacks) elements by coordinates
+% e.g. [0,0,0,1] => [[0,0],[1,0],[0,1]]
+blackList(C, N, B):- flatten(C, Cf), filterBlacks(Cf, 0, N, B).
+filterBlacks([], _, _, []).
+filterBlacks([C|Cs], I, N, [[X, Y]|B]):- C = 0, index(I, X, Y, N), I1 is I + 1, filterBlacks(Cs, I1, N, B), !.
+filterBlacks([_|Cs], I, N, B):- I1 is I + 1, filterBlacks(Cs, I1, N, B), !.
 
-graph([H|T], I, N, Nodes):-
-  I1 = I + 1,
-  graph(T, I1, Ns).
+chainAppend([],_,[]).
+chainAppend([Ch|Chs], [C1, C2], [[C2|Ch]|R]):- member(C1, Ch), chainAppend(Chs, [C1, C2], R), !.
+chainAppend([Ch|Chs], [C1, C2], [[C1|Ch]|R]):- member(C2, Ch), chainAppend(Chs, [C1, C2], R), !.
+chainAppend([Ch|Chs], C, [Ch|R]):- chainAppend(Chs, C, R), !.
 
-blackList(P, B):-
+blackChains(P, Bcs):-
   puzzle(P, _, C),
   length(C, N),
-  flattten(C, Cf),
-  blackList(Cf, 0, N, B).
+  blackList(C, N, Bl),
+  blackChains(Bl, N, Bcs).
 
-blackList([C|Cs], I, N, B):-
-  maplist(isBlack(I, N), C, R)
-  I1 is I + 1,
-  blackList(Cs, I1, [R|B]).
+blackChains([], _, []).
 
-isBlack(C, I, N, [X, Y]):- C = 0, index(I, X, Y, N).
+% Downwards left chain
+blackChains([[X, Y]|Bs], N, Chs):-
+  X0 is X - 1,
+  Y0 is Y + 1,
+  X0 > 0, Y0 < N,
+  chainAppend(Chs, [[X,Y],[X0,Y0]], Chs1),
+  blackChains(Bs, N, Chs1).
+
+% Downwards right chain
+blackChains([[X, Y]|Bs], N, Chs):-
+  X1 is X + 1,
+  Y1 is Y + 1,
+  X1 < N, Y1 < N,
+  chainAppend(Chs, [[X,Y],[X1,Y1]], Chs1),
+  blackChains(Bs, N, Chs1).
+
+% Single black
+blackChains([C|Bs], N, [C|Chs]):-
+  blackChains(Bs, N, Chs).
+
 
 uniqueWhiteRow([]).
 uniqueWhiteRow([Pl|Pls]):- pair(Pl, V, C), ( C = 1 -> not(member([V, 1], Pls)) ; true ), uniqueWhiteRow(Pls).
@@ -125,8 +143,12 @@ test6:-
   floodFill(P6).
 
 test:-
-  puzzle(_, [[3,5,4,1,3],[2,4,1,4,5],[2,2,4,5,3],[4,3,5,4,2],[3,4,3,2,1]],
-            [[1,1,1,1,1],[1,1,1,1,1],[1,1,1,1,1],[1,1,1,1,1],[1,1,1,1,1]]).
+  puzzle(P, [[3,5,4,1,3],[2,4,1,4,5],[2,2,4,5,3],[4,3,5,4,2],[3,4,3,2,1]],
+            [[1,1,1,0,1],
+             [0,1,0,1,1],
+             [1,0,1,1,1],
+             [1,1,1,1,1],
+             [1,1,0,1,1]]),
   %puzzle(P0, [[1,2],[3,4]],[[0,0],[0,0]]),  % true
   %puzzle(P1, [[1,2],[3,4]],[[1,0],[0,1]]),  % false
   %puzzle(P2, [[1,2],[3,4]],[[0,1],[0,0]]),  % true
@@ -134,13 +156,16 @@ test:-
   %puzzle(P4, [[1,2],[3,4]],[[1,0],[0,0]]),  % true
   %puzzle(P5, [[1,2],[3,4]],[[0,1],[1,0]]),  % false
 
-:- test0.
-:- not(test1).
-:- test2.
-:- test3.
-:- test4.
-:- not(test5).
-:- test6.
+  blackChains(P, R),
+  writeLine(R).
+
+%:- test0.
+%:- not(test1).
+%:- test2.
+%:- test3.
+%:- test4.
+%:- not(test5).
+%:- test6.
 
 /* doSolve(SizeX,SizeY,Input,Output) */
 doSolve(5,_,_,[[1, 2 ,3,'X',5],[4,1,5,3,2],[2,'X',1,'X',3],[5,3,'X',1,4],[3,'X',4,5,'X']]):-!.
