@@ -59,7 +59,6 @@ blackChains(P, Bcs):-
 
 blackChains([], _, []).
 
-% Downwards left chain
 blackChains([[X, Y]|Bs], N, Chs):-
   X0 is X - 1,
   Y0 is Y + 1,
@@ -67,7 +66,6 @@ blackChains([[X, Y]|Bs], N, Chs):-
   chainAppend(Chs, [[X,Y],[X0,Y0]], Chs1),
   blackChains(Bs, N, Chs1).
 
-% Downwards right chain
 blackChains([[X, Y]|Bs], N, Chs):-
   X1 is X + 1,
   Y1 is Y + 1,
@@ -75,8 +73,7 @@ blackChains([[X, Y]|Bs], N, Chs):-
   chainAppend(Chs, [[X,Y],[X1,Y1]], Chs1),
   blackChains(Bs, N, Chs1).
 
-% Single black
-blackChains([C|Bs], N, [C|Chs]):-
+blackChains([C|Bs], N, [[C]|Chs]):-
   blackChains(Bs, N, Chs).
 
 
