@@ -46,10 +46,10 @@ filterBlacks([], _, _, []).
 filterBlacks([C|Cs], I, N, [[X, Y]|B]):- C = 0, index(I, X, Y, N), I1 is I + 1, filterBlacks(Cs, I1, N, B), !.
 filterBlacks([_|Cs], I, N, B):- I1 is I + 1, filterBlacks(Cs, I1, N, B), !.
 
-chainAppend([],_,[]).
-chainAppend([Ch|Chs], [C1, C2], [[C2|Ch]|R]):- member(C1, Ch), chainAppend(Chs, [C1, C2], R), !.
-chainAppend([Ch|Chs], [C1, C2], [[C1|Ch]|R]):- member(C2, Ch), chainAppend(Chs, [C1, C2], R), !.
-chainAppend([Ch|Chs], C, [Ch|R]):- chainAppend(Chs, C, R), !.
+chainAppend([], _, []):- !.
+chainAppend([Ch|Chs], [C1, C2], [[C2|Ch]|R]):- member(C1, Ch), chainAppend(Chs, [C1, C2], R),!.
+chainAppend([Ch|Chs], [C1, C2], [[C1|Ch]|R]):- member(C2, Ch), chainAppend(Chs, [C1, C2], R),!.
+chainAppend([Ch|Chs], C, [Ch, C|R]):- chainAppend(Chs, C, R),!.
 
 blackChains(P, Bcs):-
   puzzle(P, _, C),
@@ -64,18 +64,23 @@ blackChains([[X, Y]|Bs], N, Chs):-
   Y0 is Y + 1,
   X0 > 0, Y0 < N,
   chainAppend(Chs, [[X,Y],[X0,Y0]], Chs1),
-  blackChains(Bs, N, Chs1).
+  bla(Chs1, [[X,Y],[X0,Y0]], R),
+  blackChains(Bs, N, R).
 
 blackChains([[X, Y]|Bs], N, Chs):-
   X1 is X + 1,
   Y1 is Y + 1,
   X1 < N, Y1 < N,
   chainAppend(Chs, [[X,Y],[X1,Y1]], Chs1),
-  blackChains(Bs, N, Chs1).
+  bla(Chs1, [[X,Y],[X1,Y1]], R),
+  blackChains(Bs, N, R).
 
 blackChains([C|Bs], N, [[C]|Chs]):-
   blackChains(Bs, N, Chs).
 
+
+bla([], C, [C]).
+bla([H|T], _, [H|T]).
 
 uniqueWhiteRow([]).
 uniqueWhiteRow([Pl|Pls]):- pair(Pl, V, C), ( C = 1 -> not(member([V, 1], Pls)) ; true ), uniqueWhiteRow(Pls).
