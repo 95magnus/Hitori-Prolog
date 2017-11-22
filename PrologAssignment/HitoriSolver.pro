@@ -46,7 +46,8 @@ filterBlacks([], _, _, []).
 filterBlacks([C|Cs], I, N, [[X, Y]|B]):- C = 0, index(I, X, Y, N), I1 is I + 1, filterBlacks(Cs, I1, N, B), !.
 filterBlacks([_|Cs], I, N, B):- I1 is I + 1, filterBlacks(Cs, I1, N, B), !.
 
-chainAppend([], _, []):- !.
+chainAppend([], _, []).
+chainAppend([], C, [C]).
 chainAppend([Ch|Chs], [C1, C2], [[C2|Ch]|R]):- member(C1, Ch), chainAppend(Chs, [C1, C2], R),!.
 chainAppend([Ch|Chs], [C1, C2], [[C1|Ch]|R]):- member(C2, Ch), chainAppend(Chs, [C1, C2], R),!.
 chainAppend([Ch|Chs], C, [Ch, C|R]):- chainAppend(Chs, C, R),!.
