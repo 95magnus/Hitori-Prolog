@@ -7,6 +7,59 @@ inputFile('./TestInput/hitori_unsolved.txt').
 */
 
 /********************* dummy solution algorithms -> fill your correct algorithm here */
+
+isValid(V, Cf):-
+    	length(Cf, Lc),
+		length(V, Lv),
+    	L is Lv*Lv - Lc,
+    	fillWithBlanks(Cf, L, R),
+		append(Cf, R, Filled),
+    	create2D(Filled, Lv, C),!,
+		puzzle(P, V, C),
+		ab(P),
+		uniqueWhite(P).
+
+fillWithBlanks(_, 0, _).
+fillWithBlanks(R, L, Result):-
+    			Next is L - 1,
+    			fillWithBlanks(R, Next, R2),
+    			append(R2, [-1], Result).
+
+
+solverLaunchpad(P, R):-
+    puzzle(P, _, C),
+	flatten(C, Cf),
+    badSolve(P, Cf, R).
+
+badSolve(P, [], R):-	length(R,L),
+					Length is round(sqrt(L)),
+    				create2D(R, Length, A),!,
+					puzzle(P, V, _),
+    				puzzle(P1, V, A),
+					write("\nDING! DING! DING! Solution found!\n"),
+					write(P1), true.
+
+badSolve(P, [E|Rest], R):-
+		puzzle(P, V, _),
+		isValid(V, R),
+		(E = -1 -> append(R, [0], Rw),
+		(badSolve(P, Rest, Rw)->true;append(R, [1], Rb),
+		(isValid(V, Rb) -> badSolve(P, Rest, Rb))); append(R, [E], Rc),badSolve(P, Rest, Rc)).
+		
+		
+
+solve(P):-ab(P),uniqueWhite(P).
+
+create2D([], _, []).
+create2D(List, L, [Row|Board]):-
+  create2Drow(List, L, Row, Tail),
+  create2D(Tail, L, Board).
+
+create2Drow(Tail, 0, [], Tail).
+create2Drow([Item|List], L, [Item|Row], Tail):-
+  L1 is L-1,
+  create2Drow(List, L1, Row, Tail).
+
 transpose([], []).
 transpose([F|Fs], Ts) :- transpose(F, [F|Fs], Ts).
 transpose([], _, []).
